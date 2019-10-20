@@ -3,7 +3,7 @@
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
     #include "Wire.h"
 #endif
- unsigned long previousMillis;
+unsigned long previousMillis,dt;
 MPU6050 mpu;
 //defini apenas para teste a leitura dos eixos
 #define OUTPUT_READABLE_YAWPITCHROLL
@@ -16,11 +16,19 @@ uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
 uint16_t fifoCount;     // count of all bytes currently in FIFO
 uint8_t fifoBuffer[64]; // FIFO storage buffer
 
+//variaveis de projeto
+int angYaw = 0;
+int angRoll = 0;
+int angPitch = 0;
+float error, p,i,d,pid;
 // variaveis de movimento e orientação
+
+
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+float pitch,roll,yaw;
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
@@ -93,6 +101,46 @@ void setup() {
 }
 
 void loop() {
+//-----------------------------------------------------------------
+//-----------------testes com serial ------------------------------
+//-----------------------------------------------------------------
+//a partir de um comando no serial será executado a rotina de movimentação do submarino
+  if(Serial.available())
+  {
+    switch(Serial.read())
+    {
+      
+      case 'ff':
+        ff();
+      break;
+      
+      case 'fe':
+        fe();
+      break;
+      
+      case 'fd':
+        fd();
+      break;
+
+      case 'rr':
+        rr();
+      break;
+      
+    }
+    receberParametros();
+  }
+//de acordo com o comando será executado uma rotina diferente.
+//Ex: para frente os dois motores vão ter um pwm igual, se for dif o yaw ele vai corrigir um motor
+//falta adicionar o pid para trabalhar com os dados
+//falta adicionar os controles de direção que conterão os setpoints respectivos da movimentação
+//serão implementados quatro rotinas(frente-esquerda{fe},frente-direita{fd},frente{ff},ré{rr})
+//as rotinas direita,esquerda,esquerda-ré e direta-ré serão implementadas posteriormente.
+//implementar a rotina de segurança para superaquecimento do sistema.
+//falta adicionar o filtro complementar, para isso foi implementado o millis que será o dt(verificar se há a necessidade)
+}
+
+
+void receberParametros(){
      if (!dmpReady) return;
 
     // wait for MPU interrupt or extra packet(s) available
@@ -133,18 +181,124 @@ void loop() {
   }
 
 unsigned long currentMillis = millis(); //VARIÁVEL RECEBE O TEMPO ATUAL EM MILISSEGUNDOS
-
-  if (currentMillis - previousMillis > 500) { //SE O TEMPO ATUAL MENOS O TEMPO ANTERIOR FOR MENOR QUE O INTERVALO, FAZ
+//[0] é yaw,[1] é pitch e [2] é roll.
+  if (currentMillis - previousMillis > 500) {
+    //long dt = (currentMillis - previousMillis)/1000;
     previousMillis = currentMillis;
                 // display Euler angles in degrees
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+            yaw = ypr[0] * (180/M_PI);
+            pitch = ypr[1] * (180/M_PI);
+            roll = ypr[2] * (180/M_PI);
             Serial.print("ypr\t");
-            Serial.print(ypr[0] * 180/M_PI);
+            Serial.print(yaw);
             Serial.print("\t");
-            Serial.print(ypr[1] * 180/M_PI);
+            Serial.print(pitch);
             Serial.print("\t");
-            Serial.println(ypr[2] * 180/M_PI);
+            Serial.println(roll);
+  }
+} 
+void ff(){
+  //a função ff tem como objetivo manter os dois motores de propulsão e mergulho no mesmo angulo que já estavam.
+  //monitorar se o botao ainda está pressionado
+  //se sim vou ver se o angulo de yaw e roll não se pitch não se alteraram
+  while(Serial.read() == 'ff')
+  {
+    receberParametros();
+    if(angYaw != yaw) // propulsão
+    {
+      //vai ver qual motor precisa girar mais que o outro   
+      if(yaw > 0)
+      {
+          //diminuir o da esquerda
+      }
+      if(yaw < 0)
+      {
+          //aumentar o da esquerda
+      }
+    }
+    if(angPitch != pitch) // submersão
+    {
+      //vai ver qual motor precisa girar mais que o outro   
+      if(pitch > 0)
+      {
+          //aumentar os dois de submersão da esquerda
+      }
+      if(pitch < 0)
+      {
+          //diminuir o da esquerda
+      }
+    }
+  }
+}
+
+void fe(){
+    //vou monitorar se o botão ainda não mudou;
+    //vou ter um roll de 10º
+    //vou variando o yaw
+    //o pitch irei manter constante
+    //para variar o yaw irei precisar girar mais o propulsor direito e quando eu parar vou salvar o angyaw = yaw que será minha referência;
+    while(Serial.read() == 'fe')
+      {
+        if(roll < 15){
+          //aumentar a rotação do motor direito
+          //aqui vai ter pid
+        }
+        //colocar uma tensão de 8v no motor esquerdo e 10 no direito até soltar o botão
+        //aqui não vai ter pid porque não terei referencia.
+      }
+} 
+void fd(){
+    //vou monitorar se o botão ainda não mudou;
+    //vou ter um roll de 10º
+    //vou variando o yaw
+    //o pitch irei manter constante
+    //para variar o yaw irei precisar girar mais o propulsor direito e quando eu parar vou salvar o angyaw = yaw que será minha referência;
+    while(Serial.read() == 'fe')
+      {
+        if(roll < 15){
+          //aumentar a rotação do motor esquerdo
+          //aqui vai ter pid
+        }
+        //colocar uma tensão de 8v no motor direito e 10 no esquerdo até soltar o botão
+        //aqui não vai ter pid porque não terei referencia.
+      }
+} 
+
+void rr(){
+  //a função ff tem como objetivo manter os dois motores de propulsão e mergulho no mesmo angulo que já estavam.
+  //monitorar se o botao ainda está pressionado
+  //se sim vou ver se o angulo de yaw e roll não se pitch não se alteraram
+  while(Serial.read() == 'rr')
+  {
+    receberParametros();
+    if(angYaw != yaw) // propulsão
+    {
+      //coloca um pwm igual nos dois motores.
+      //vai ver qual motor precisa girar mais que o outro   
+      if(yaw > 0)
+      {
+          //diminuir o da esquerda
+      }
+      if(yaw < 0)
+      {
+          //aumentar o da esquerda
+      }
+    }
+    if(angPitch != pitch) // submersão
+    {
+      //coloca uma propulsão igual  
+      //vai ver qual motor precisa girar mais que o outro   
+      if(pitch > 0)
+      {
+          //aumentar os dois de submersão da esquerda
+      }
+      if(pitch < 0)
+      {
+          //diminuir o da esquerda
+      }
+    }
   }
 }
