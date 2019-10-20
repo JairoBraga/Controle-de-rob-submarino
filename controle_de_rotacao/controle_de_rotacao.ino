@@ -3,7 +3,7 @@
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
     #include "Wire.h"
 #endif
-
+ unsigned long previousMillis;
 MPU6050 mpu;
 //defini apenas para teste a leitura dos eixos
 #define OUTPUT_READABLE_YAWPITCHROLL
@@ -18,9 +18,6 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 
 // variaveis de movimento e orientação
 Quaternion q;           // [w, x, y, z]         quaternion container
-VectorInt16 aa;         // [x, y, z]            accel sensor measurements
-VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
@@ -119,7 +116,7 @@ void loop() {
     else if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
         // reset so we can continue cleanly
         mpu.resetFIFO();
-      //  fifoCount = mpu.getFIFOCount();  // will be zero after reset no need to ask
+        fifoCount = mpu.getFIFOCount();  // will be zero after reset no need to ask
         Serial.println(F("FIFO overflow!"));
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
@@ -133,8 +130,13 @@ void loop() {
     fifoCount -= packetSize;
   }
 
-  #ifdef OUTPUT_READABLE_YAWPITCHROLL
-            // display Euler angles in degrees
+  }
+
+unsigned long currentMillis = millis(); //VARIÁVEL RECEBE O TEMPO ATUAL EM MILISSEGUNDOS
+
+  if (currentMillis - previousMillis > 500) { //SE O TEMPO ATUAL MENOS O TEMPO ANTERIOR FOR MENOR QUE O INTERVALO, FAZ
+    previousMillis = currentMillis;
+                // display Euler angles in degrees
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
@@ -144,7 +146,5 @@ void loop() {
             Serial.print(ypr[1] * 180/M_PI);
             Serial.print("\t");
             Serial.println(ypr[2] * 180/M_PI);
-        #endif
-
   }
 }
