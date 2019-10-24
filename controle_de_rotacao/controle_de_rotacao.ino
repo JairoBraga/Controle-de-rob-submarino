@@ -21,6 +21,9 @@ int angYaw = 0;
 int angRoll = 0;
 int angPitch = 0;
 float error, p,i,d,pid;
+float kp,ki,kd;
+//motores de propulsão:motor1 e 2;motores de submersão 3 e 4;
+int motor1f = 3, motor1r = 5, motor2f = 6, motor2r = 9, motor3=10, motor4 = 11;
 // variaveis de movimento e orientação
 
 
@@ -122,10 +125,12 @@ void loop() {
         fd();
       break;
 
-      case 'rr':
-        rr();
-      break;
-      
+//      case 'rr':
+//        rr();
+//      break;
+      default:
+        //não implementado
+        break;
     }
     receberParametros();
   }
@@ -212,7 +217,9 @@ void ff(){
       //vai ver qual motor precisa girar mais que o outro   
       if(yaw > 0)
       {
-          //diminuir o da esquerda
+          error = yaw - angYaw;
+          p = kp*error;
+          i = ki * error*dt;
       }
       if(yaw < 0)
       {
