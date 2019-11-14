@@ -1,32 +1,85 @@
-#include <Propulsores.h>
+#include "Submarino.h"
 
-
-Submarino::Submarino(int pinOut_1, int pinOut_2,float kp, float ki, float kd)
+Submarino::Submarino(float kp, float ki, float kd)
 {
-	pinOut_1 = pinOut_1;
-	pinOut_2 = pinOut_2;
 	kp = kp;
 	ki = ki;
 	kd = kd;
+	rollPoint = 0;
+	yawPoint = 0;
+	pitchPoint = 0;
+	
 }
 
-Submarino::acionarPropulsor(int direction, float velocidade){
-	if(direction == 1)
-		analogWrite(pinOut_1,velocidade);	
-	else
-		analogWrite(pinOut_2,velocidade);
+Submarino::controle(int comando, float yawGyro,float pitchGyro, float rollGyro){
+	//falta adicionar a submersão
+	switch(comando){
+		case 'f'://frente
+				acionarPropulsor(PID(yawPoint,yawGyro), propulsor_direito_horario);
+				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
+				acionarPropulsor(PID(rollPoint,rollGyro), submersor_direito_horario);
+				acionarPropulsor(minVelocidade, submersor_esquerdo_horario); // setpoint vai ser 0	
+		break;
+    
+		case 'r':
+        acionarPropulsor(PID(yawPoint,yawGyro), propulsor_direito_horario);				
+				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
+				acionarPropulsor(PID(rollPoint,rollGyro), submersor_direito_horario);
+				acionarPropulsor(minVelocidade, submersor_esquerdo_horario); // setpoint vai ser 0	
+		break;
+    
+		case 'd'://direita
+				acionarPropulsor(minVelocidade, propulsor_direito_anti_h);
+				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
+				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
+				acionarPropulsor(minVelocidade, submersor_direito_horario);
+				rollPoint = rollGyro;
+		break;
+    
+		case 'e'://esquerda
+				acionarPropulsor(minVelocidade, propulsor_direito_horario);
+				acionarPropulsor(minVelocidade, propulsor_esquerdo_anti_h);
+				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
+				acionarPropulsor(minVelocidade, submersor_direito_horario);
+				rollPoint = rollGyro;
+		break;
+		
+		case 'fd'://frentedireita
+       	acionarPropulsor(minVelocidade, propulsor_direito_anti_h);
+				acionarPropulsor(curveValue, propulsor_esquerdo_horario);
+				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
+				acionarPropulsor(minVelocidade, submersor_direito_horario);
+				rollPoint = rollGyro;
+		break;
+		case 'fe'://frenteesquerda
+				acionarPropulsor(curveValue, propulsor_direito_anti_h);
+				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
+				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
+				acionarPropulsor(minVelocidade, submersor_direito_horario);
+				rollPoint = rollGyro;
+		break;
 
-
+    default:
+    break;
+	}	
+}	
+	
+Submarino::acionarPropulsor(int pinMotor, float velocidade){
+		analogWrite(pinMotor,velocidade);
 
 }
-Submarino::pid(float setPoint, float value, unsigned long prevTime, unsigned long currentTime, float minValue, float maxValue){
-	float error = setPoint - value;
+
+
+Submarino::PID(float setPoint, float valueGyro){
+  currentTime = millis();
+  if(currentTime - prevTime > 1){
+  prevTime = currentTime;
+	float error = setPoint - valueGyro;
 	dt = currentTime - prevTime;
 	p = kp * error;
 	i = ki * error * dt;
 	d = kd * error / dt;
 	pid = p + i + d;
-	return (map(velocidade,-180,180,-62,62)+160);
-	//return pid;
+	pid = (map(pid, -180, 180,-100, 100) + minVelocidade);	
 }
- 
+}

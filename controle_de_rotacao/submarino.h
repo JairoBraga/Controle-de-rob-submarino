@@ -1,21 +1,37 @@
-#ifndef Propulsores_h
-#define Propulsores_h
+#ifndef SUBMARINO_H
+#define SUBMARINO_H
+
+#define propulsor_direito_horario 3
+#define	propulsor_direito_anti_h 5
+#define propulsor_esquerdo_horario 6
+#define propulsor_esquerdo_anti_h 9
+#define	submersor_direito_horario 10
+#define submersor_direito_anti_h 7
+#define submersor_esquerdo_horario 11
+#define submersor_esquerdo_anti_h 8
+
 
 #include <Arduino.h>
 
-class Propulsores
+//Imersão não tera pwm somente atuara os dois motores em carga máxima com pinos digitais
+//Devido a falta de pinos de pwm disponiveis no arduino uno
+
+//Nota de controle: 
+//Quem vai determinar qual motor será acionado será quem chamou			
+class Submarino
 {
 	private:
-	unsigned long prevTime,currentTime, dt;
-	int pinOut_1, pinOut_2,direction; //horario 1 anti-horario 2;
-	float minValue = 111, maxValue = 222,velocidade;
 	float kp, ki, kd;
 	float p, i, d, pid;
-	
+	float yawPoint, rollPoint, pitchPoint;
+  float minVelocidade = 111;
+  float curveValue = 155;
+  unsigned long prevTime, currentTime, dt;
 
 	public:
-	propulsores(int pinOut_1, int pinOut_2,float kp, float ki, float kd);
-	void acionarPropulsor(int direction, float velocidade);
-	float pid(float setPoint, float value, unsigned long prevTime, unsigned long currentTimefloat, minValue, maxValue);
-
-}	
+	Submarino(float kp, float ki, float kd);
+	int controle(int comando, float yaw,float pitch, float roll);
+	int acionarPropulsor(int pinMotor, float velocidade);
+	int PID(float setPoint, float valueGyro);
+};	
+#endif
