@@ -14,6 +14,16 @@ Submarino::Submarino(float kp, float ki, float kd)
 Submarino::controle(int comando, float yawGyro,float pitchGyro, float rollGyro){
 	//falta adicionar a submersão
 	switch(comando){
+    case 's':
+        acionarPropulsor(minVelocidade,submersor_direito_anti_h);
+        acionarPropulsor(minVelocidade,submersor_esquerdo_horario);
+        break;
+        
+    case 'i':
+        acionarPropulsor(0,submersor_direito_anti_h);
+        acionarPropulsor(0,submersor_esquerdo_horario);
+        break;
+        
 		case 'f'://frente
 				acionarPropulsor(PID(yawPoint,yawGyro), propulsor_direito_horario);
 				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
@@ -22,8 +32,8 @@ Submarino::controle(int comando, float yawGyro,float pitchGyro, float rollGyro){
 		break;
     
 		case 'r':
-        acionarPropulsor(PID(yawPoint,yawGyro), propulsor_direito_horario);				
-				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
+        acionarPropulsor(PID(yawPoint,yawGyro), submersor_direito_anti_h);				
+				acionarPropulsor(minVelocidade, propulsor_esquerdo_anti_h);
 				acionarPropulsor(PID(rollPoint,rollGyro), submersor_direito_horario);
 				acionarPropulsor(minVelocidade, submersor_esquerdo_horario); // setpoint vai ser 0	
 		break;
@@ -42,24 +52,31 @@ Submarino::controle(int comando, float yawGyro,float pitchGyro, float rollGyro){
 				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
 				acionarPropulsor(minVelocidade, submersor_direito_horario);
 				rollPoint = rollGyro;
+	  break;
+    case 'o':
+        //desliga todo os propulsores para evitar acionamento dos 4 transistores
+        acionarPropulsor(0,propulsor_direito_horario);
+        acionarPropulsor(0,propulsor_direito_anti_h);
+        acionarPropulsor(0,propulsor_esquerdo_horario);
+        acionarPropulsor(0,propulsor_esquerdo_anti_h);
 		break;
-		
-		case 'fd'://frentedireita
-       	acionarPropulsor(minVelocidade, propulsor_direito_anti_h);
-				acionarPropulsor(curveValue, propulsor_esquerdo_horario);
-				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
-				acionarPropulsor(minVelocidade, submersor_direito_horario);
-				rollPoint = rollGyro;
-		break;
-		case 'fe'://frenteesquerda
-				acionarPropulsor(curveValue, propulsor_direito_anti_h);
-				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
-				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
-				acionarPropulsor(minVelocidade, submersor_direito_horario);
-				rollPoint = rollGyro;
-		break;
+//		case 'f'://frentedireita
+//       	acionarPropulsor(minVelocidade, propulsor_direito_anti_h);
+//				acionarPropulsor(curveValue, propulsor_esquerdo_horario);
+//				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
+//				acionarPropulsor(minVelocidade, submersor_direito_horario);
+//				rollPoint = rollGyro;
+//		break;
+//		case 'fe'://frenteesquerda
+//				acionarPropulsor(curveValue, propulsor_direito_anti_h);
+//				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
+//				acionarPropulsor(PID(rollPoint,rollGyro), submersor_esquerdo_horario); // setpoint vai ser 0
+//				acionarPropulsor(minVelocidade, submersor_direito_horario);
+//				rollPoint = rollGyro;
+//		break;
 
-    default:
+    
+    
     break;
 	}	
 }	
