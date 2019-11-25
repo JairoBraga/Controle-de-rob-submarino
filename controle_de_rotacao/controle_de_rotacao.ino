@@ -23,7 +23,7 @@ MPU6050 mpu;
  #define OUTPUT_READABLE_YAWPITCHROLL
 #define INTERRUPT_PIN 2
 // MPU controles e status de variaveis
-bool dmpReady = false;  // set true if DMP init was successful
+bool dmpReady = true;  // set true if DMP init was successful
 uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
 uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
@@ -43,7 +43,7 @@ float pitch,roll,yaw;
 #define kd 0.01
 unsigned long previousMillis, currentMillis = 0;
 Submarino submarino(kp,ki,kd);
-
+char comando;
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
 // ================================================================
@@ -119,14 +119,14 @@ void loop() {
 //-----------------testes com serial ------------------------------
 //-----------------------------------------------------------------
 //a partir de um comando no serial será executado a rotina de movimentação do submarino
-  if(Serial.available())
-  {
-    char comando = Serial.read();
     receberParametros();
+    if(Serial.available() > 0)
+    {
+    comando = Serial.read();
+    Serial.println(comando);
     submarino.controle(comando, yaw, pitch, roll);
-  }
+    }
 }
-
 
 void receberParametros(){
      if (!dmpReady) return;

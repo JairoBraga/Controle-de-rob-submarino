@@ -29,6 +29,8 @@ Submarino::controle(int comando, float yawGyro,float pitchGyro, float rollGyro){
 				acionarPropulsor(minVelocidade, propulsor_esquerdo_horario);
 				acionarPropulsor(PID(rollPoint,rollGyro), submersor_direito_horario);
 				acionarPropulsor(minVelocidade, submersor_esquerdo_horario); // setpoint vai ser 0	
+        Serial.println("Passei aqui");
+        //delay(500);
 		break;
     
 		case 'r':
